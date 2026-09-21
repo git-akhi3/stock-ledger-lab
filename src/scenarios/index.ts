@@ -10,6 +10,7 @@ const money = (s: Snapshot, lane: 'old' | 'nu') => fmtMoney(cost(s[lane].reads, 
 // ───────────────────────────────────────────────────────────────────────────
 const firstSale: ScenarioDef = {
   id: 'first-sale',
+  short: 'First sale',
   n: 1,
   title: 'First sale of the day goes negative',
   tagline: 'The #1 support ticket, reproduced.',
@@ -52,7 +53,8 @@ const firstSale: ScenarioDef = {
       },
       {
         caption: 'The replays finish at 11 — then the phone’s cached number lands last.',
-        detail: 'POS A writes its own absolute value, 0 − 1 = −1, straight into the stock field. Last writer wins. The owner sees −1.',
+        detail:
+          'POS A writes its own absolute value, 0 − 1 = −1, straight into the stock field. Today: last writer wins, the owner sees −1. Proposed: the same stray write lands for a moment, but it is flagged as foreign and a repair is already queued.',
         duration: 6000,
         run: (e, fx) => {
           fx.after(200, () => e.finishReplay('pubsub'))
@@ -95,6 +97,7 @@ const firstSale: ScenarioDef = {
 // ───────────────────────────────────────────────────────────────────────────
 const offlineFlush: ScenarioDef = {
   id: 'offline-flush',
+  short: 'Offline flush',
   n: 2,
   title: 'Four months offline, then a flush',
   tagline: 'Hundreds of backdated rows in one burst.',
@@ -197,6 +200,7 @@ const offlineFlush: ScenarioDef = {
 // ───────────────────────────────────────────────────────────────────────────
 const lateAfterRecount: ScenarioDef = {
   id: 'late-recount',
+  short: 'Late recount',
   n: 3,
   title: 'A late sale arrives after a recount',
   tagline: 'Where “order doesn’t matter” actually breaks — and the fix.',
@@ -302,6 +306,7 @@ const lateAfterRecount: ScenarioDef = {
 // ───────────────────────────────────────────────────────────────────────────
 const csvReimport: ScenarioDef = {
   id: 'csv-reimport',
+  short: 'CSV re-import',
   n: 4,
   title: 'CSV re-import, ledger wiped',
   tagline: 'The history is gone. What survives?',
@@ -377,6 +382,7 @@ const csvReimport: ScenarioDef = {
 // ───────────────────────────────────────────────────────────────────────────
 const resend: ScenarioDef = {
   id: 'resend',
+  short: 'Re-send',
   n: 5,
   title: 'A re-send wipes the field',
   tagline: 'Why the trigger is onWrite, not onCreate.',
@@ -439,6 +445,7 @@ const resend: ScenarioDef = {
 // ───────────────────────────────────────────────────────────────────────────
 const duplicate: ScenarioDef = {
   id: 'duplicate',
+  short: 'Triple delivery',
   n: 6,
   title: 'The same event, delivered three times',
   tagline: 'At-least-once is the contract. Idempotent or bust.',
@@ -516,6 +523,7 @@ const duplicate: ScenarioDef = {
 // ───────────────────────────────────────────────────────────────────────────
 const overflow: ScenarioDef = {
   id: 'overflow',
+  short: 'Overflow row',
   n: 7,
   title: 'A 32-bit overflow row',
   tagline: 'One garbage row, two very different mornings.',
@@ -571,6 +579,7 @@ const overflow: ScenarioDef = {
 // ───────────────────────────────────────────────────────────────────────────
 const flashSale: ScenarioDef = {
   id: 'flash-sale',
+  short: 'Flash sale',
   n: 8,
   title: 'Flash sale on a hot item',
   tagline: 'Forty sales, ten seconds, one document.',
@@ -652,6 +661,7 @@ function rng(seed: number) {
 
 const chaos: ScenarioDef = {
   id: 'chaos',
+  short: 'Chaos',
   n: 9,
   title: 'Chaos mode',
   tagline: 'Everything at once, for thirty seconds.',

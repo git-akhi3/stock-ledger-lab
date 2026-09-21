@@ -14,7 +14,7 @@ interface Built {
 export function usePlayer(initialId: string, params: Params) {
   const [scenarioId, setScenarioId] = useState(initialId)
   const [beat, setBeat] = useState(0)
-  const [playing, setPlaying] = useState(true)
+  const [playing, setPlaying] = useState(false)
   const [snap, setSnap] = useState<Snapshot | null>(null)
   const engineRef = useRef<Engine | null>(null)
   const timers = useRef<number[]>([])
@@ -84,7 +84,8 @@ export function usePlayer(initialId: string, params: Params) {
   // load scenario / params change
   useEffect(() => {
     goTo(0, true)
-    setPlaying(true)
+    // chaos is thirty tiny steps; stepping it by hand is no fun
+    if (built.def.id === 'chaos') setPlaying(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [built])
 
@@ -111,7 +112,6 @@ export function usePlayer(initialId: string, params: Params) {
   }, [goTo])
   const restart = useCallback(() => {
     goTo(0, true)
-    setPlaying(true)
   }, [goTo])
   const select = useCallback((id: string) => {
     setScenarioId(id)

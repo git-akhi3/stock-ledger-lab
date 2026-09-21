@@ -32,6 +32,8 @@ export interface ScenarioDef {
   id: string
   n: number
   title: string
+  /** two-word label for the scenario strip */
+  short: string
   tagline: string
   headliner: boolean
   /** short label of what the scenario proves */
