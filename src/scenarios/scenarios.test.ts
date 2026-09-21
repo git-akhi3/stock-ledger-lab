@@ -169,15 +169,32 @@ describe('each story ends where the design document says it should', () => {
     expect(s.old.value).toBe(12 - 2_147_483_647)
   })
 
-  it('8. flash sale: 80 writes today vs 2 in the new design', () => {
+  it('8. flash sale: one write per sale today (40) vs 2 in the new design', () => {
     const s = last('flash-sale')
     expect(s.truth).toBe(160)
     expect(s.old.value).toBe(160)
     expect(s.nu.value).toBe(160)
-    expect(s.old.docWrites).toBe(80)
+    expect(s.old.docWrites).toBe(40)
     expect(s.nu.docWrites).toBe(2)
   })
 
+  for (const [scale, peak, over] of [
+    [1, '12', false],
+    [10, '116', false],
+    [100, '1,157', true],
+  ] as const) {
+    it(`8. flash sale at ${scale}×: cost and queue match the design document`, () => {
+      const p = { ...DEFAULT_PARAMS, scale }
+      const { beats } = scenarioById('flash-sale').build(p)
+      const s = last('flash-sale', p)
+      const nu = say(beats[2].nu, s)
+      const old = say(beats[2].old, s)
+      expect(old).toContain(`$${(3030 * scale).toLocaleString('en-US')}`)
+      expect(nu).toContain(`$${(50 * scale).toLocaleString('en-US')}`)
+      expect(nu).toContain(peak)
+      expect(nu.includes('over its default limit')).toBe(over)
+    })
+  }
   it('9. chaos: new design matches the shelf at every step', () => {
     const { beats } = scenarioById('chaos').build(DEFAULT_PARAMS)
     for (let k = 0; k < beats.length; k++) {
@@ -186,4 +203,33 @@ describe('each story ends where the design document says it should', () => {
       expect(s.nu.invariantOk).toBe(true)
     }
   })
+})
+
+describe('each What if setting changes exactly the story it says it does', () => {
+  const finalText = (id: string, p: Params) => {
+    const { beats } = scenarioById(id).build(p)
+    const s = runTo(id, p, beats.length - 1)
+    return JSON.stringify({
+      nums: [s.truth, s.old.value, s.nu.value, s.old.reads, s.nu.reads],
+      copy: beats.map((b, k) => {
+        const sk = runTo(id, p, k)
+        return [say(b.caption, sk), say(b.detail, sk), say(b.old, sk), say(b.nu, sk)]
+      }),
+    })
+  }
+  const changes: [string, Partial<Params>, string][] = [
+    ['clock skew', { clockSkewHours: 4 }, 'late-recount'],
+    ['offline burst', { burstSize: 1500 }, 'offline-flush'],
+    ['scale', { scale: 100 }, 'flash-sale'],
+  ]
+  for (const [name, change, target] of changes) {
+    it(`${name} changes “${target}” and nothing else`, () => {
+      for (const def of SCENARIOS) {
+        const before = finalText(def.id, DEFAULT_PARAMS)
+        const after = finalText(def.id, { ...DEFAULT_PARAMS, ...change })
+        if (def.id === target) expect(after).not.toBe(before)
+        else expect(after).toBe(before)
+      }
+    })
+  }
 })

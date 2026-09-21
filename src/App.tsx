@@ -142,14 +142,15 @@ export default function App() {
       <main className="mx-auto w-full max-w-[1040px] flex-1 px-5 pb-28 pt-10 sm:px-8 sm:pb-16 sm:pt-14">
         <div className="max-w-[640px]">
           <h1 className="text-[30px] font-semibold leading-[36px] tracking-[-0.025em] [text-wrap:balance] sm:text-[38px] sm:leading-[44px]">
-            Why the stock number goes wrong, and how to keep it right.
+            How the current stock sync fails, and how the redesign fixes it
           </h1>
           <p className="mt-3 text-[15.5px] leading-[24px] text-ink-2 [text-wrap:pretty] sm:text-[16px] sm:leading-[25px]">
-            Pick a story and step through it. At every step, compare what each system shows with what’s really on the shelf. Use{' '}
+            A companion to my system design submission. Pick a real shop scenario and step through it to see what each system shows compared with
+            the actual shelf count. Use{' '}
             <button onClick={() => openWhatIf('intro')} className="font-semibold text-new-ink underline decoration-new/40 underline-offset-[3px] hover:decoration-new">
               What if…
             </button>{' '}
-            to change the conditions.
+            to change the conditions, such as a till’s clock being wrong, a till offline for longer, or 100× more shops, and watch the results change.
           </p>
         </div>
 

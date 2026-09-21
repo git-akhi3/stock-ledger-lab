@@ -1,4 +1,5 @@
 import { T, fmtInt, fmtMoney, fmtNum } from '../engine/engine'
+import { NEW_USD, OLD_USD, QUEUE_LIMIT, peakTasksPerSec } from './fleet'
 import { cost } from '../engine/types'
 import type { Snapshot } from '../engine/types'
 import type { Beat, ScenarioDef } from './types'
@@ -393,40 +394,55 @@ const flashSale: ScenarioDef = {
   n: 8,
   short: 'Flash sale',
   title: 'Forty sales in ten seconds',
-  tagline: 'Where the database’s own speed limit bites.',
+  tagline: 'Where the database’s own speed limit bites, and what breaks first at scale.',
   headliner: false,
-  build: () => ({
-    seed: (e) => e.seed({ truth: 200, hiddenCount: 400, hiddenSum: 200, now: T(5, 20, 0) }),
-    beats: [
-      {
-        caption: 'Saturday 8pm. A flash sale is about to start. The shelf holds 200.',
-        old: 'Correct.',
-        nu: 'Correct.',
-        run: () => {},
-      },
-      {
-        caption: '40 bottles sell in 10 seconds.',
-        detail: 'The stock number lives in one database record, and a single record handles about one write per second.',
-        old: (s) => `Shows 160, but it wrote to that record ${fmtInt(s.old.docWrites)} times in 10 seconds. Under real load that jams.`,
-        nu: (s) => `Shows 160. Updates are grouped into one every 5 seconds: ${s.nu.docWrites} writes, well under the limit.`,
-        run: (e) => {
-          e.truth -= 40
-          for (let i = 0; i < 40; i++) {
-            e.writeRow(e.makeRow({ kind: 'sale', delta: 1, deviceId: i % 2 ? 'a' : 'b', eventTime: e.now + (i * 10) / 40 }), { silent: true })
-          }
-          e.log('ledger', '40 sales arrived in 10 seconds')
-          e.replayBurst('pubsub', 80)
-          for (const r of e.rows) e.normalize(r.id)
-          for (let i = 0; i < 40; i++) e.enqueue()
-          e.tick(5)
-          e.recompute()
-          e.tick(5)
-          e.enqueue()
-          e.recompute()
+  build: (p) => {
+    const scale = p.scale
+    const peak = Math.round(peakTasksPerSec(scale))
+    const over = peak >= QUEUE_LIMIT
+    return {
+      seed: (e) => e.seed({ truth: 200, hiddenCount: 400, hiddenSum: 200, now: T(5, 20, 0) }),
+      beats: [
+        {
+          caption: 'Saturday 8pm. A flash sale is about to start. The shelf holds 200.',
+          old: 'Correct.',
+          nu: 'Correct.',
+          run: () => {},
         },
-      },
-    ],
-  }),
+        {
+          caption: '40 bottles sell in 10 seconds.',
+          detail: 'The stock number lives in one database record, and a single record handles about one write per second.',
+          old: (s) => `Shows 160, but it wrote to that record ${fmtInt(s.old.docWrites)} times in 10 seconds, once per sale. Under real load that jams.`,
+          nu: (s) => `Shows 160. Updates are grouped into one every 5 seconds: ${s.nu.docWrites} writes, well under the limit.`,
+          run: (e) => {
+            e.truth -= 40
+            for (let i = 0; i < 40; i++) {
+              e.writeRow(e.makeRow({ kind: 'sale', delta: 1, deviceId: i % 2 ? 'a' : 'b', eventTime: e.now + (i * 10) / 40 }), { silent: true })
+            }
+            e.log('ledger', '40 sales arrived in 10 seconds')
+            // the PubSub sync fires on every ledger write; the cron replay only runs on its schedule
+            e.replayBurst('pubsub', 40)
+            for (const r of e.rows) e.normalize(r.id)
+            for (let i = 0; i < 40; i++) e.enqueue()
+            e.tick(5)
+            e.recompute()
+            e.tick(5)
+            e.enqueue()
+            e.recompute()
+          },
+        },
+        {
+          caption: scale === 1 ? 'Now picture every shop on the platform doing this at once.' : `Now picture ${scale}× as many shops doing this at once.`,
+          detail: 'Grouping protects each product’s record, so the first thing to run out of room is the shared recalculation queue, not the record and not the bill.',
+          old: `About $${fmtInt(OLD_USD * scale)} a month across every shop, and rising as history grows.`,
+          nu: over
+            ? `About $${fmtInt(NEW_USD * scale)} a month. But the recalculation queue now peaks near ${fmtInt(peak)} per second, over its default limit of ${QUEUE_LIMIT}: raise the limit or split the queue.`
+            : `About $${fmtInt(NEW_USD * scale)} a month. The recalculation queue peaks near ${fmtInt(peak)} per second, well under its default limit of ${QUEUE_LIMIT}.`,
+          run: () => {},
+        },
+      ],
+    }
+  },
 }
 
 // ───────────────────────────────────────────────────────────────────────────

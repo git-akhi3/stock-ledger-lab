@@ -2,12 +2,9 @@ import { motion } from 'framer-motion'
 import { ArrowRight, RotateCcw, X } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { fmtInt } from '../engine/engine'
+import { NEW_USD, OLD_USD, QUEUE_LIMIT, peakTasksPerSec } from '../scenarios/fleet'
 import { DEFAULT_PARAMS, type Params } from '../scenarios/types'
 
-// monthly figures from the design document, at today's volume
-const OLD_USD = 3030
-const NEW_USD = 50
-const QUEUE_LIMIT = 500 // tasks per second a Cloud Tasks queue dispatches by default
 
 function Section({
   eyebrow,
@@ -113,7 +110,7 @@ export function Sandbox({
   onShow: (id: string) => void
 }) {
   const s = params.scale
-  const peak = ((3_000_000 * s) / 2_592_000) * 10
+  const peak = peakTasksPerSec(s)
   const queuePct = Math.min(100, (peak / (QUEUE_LIMIT * 2)) * 100)
   const over = peak >= QUEUE_LIMIT
   const changed = JSON.stringify(params) !== JSON.stringify(DEFAULT_PARAMS)
