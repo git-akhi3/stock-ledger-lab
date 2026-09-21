@@ -1,0 +1,205 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* ---------- design tokens ---------- */
+:root {
+  color-scheme: light;
+  --ground: #e8ebe7;
+  --ground-2: #dfe3de;
+  --panel: #f6f7f4;
+  --panel-2: #eef0eb;
+  --line: #c9cec6;
+  --line-2: #b3b9b0;
+  --ink: #15171c;
+  --ink-2: #4b5058;
+  --ink-3: #7b8089;
+  --paper: #fbfbf8;
+  --paper-ink: #1d1f24;
+  --paper-line: #e2e1d9;
+  --old: #c47128;
+  --old-soft: #f2dcc6;
+  --old-ink: #7a4212;
+  --new: #2343d8;
+  --new-soft: #d9dffb;
+  --new-ink: #16299a;
+  --bad: #d0392b;
+  --bad-soft: #f6d5d1;
+  --good: #2c8a5b;
+  --good-soft: #d3ecdf;
+  --warn: #b7860f;
+  --warn-soft: #f4e7bf;
+  --shadow: 0 1px 2px rgb(21 23 28 / 0.06), 0 8px 24px -12px rgb(21 23 28 / 0.25);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --ground: #16181d;
+  --ground-2: #1c1f25;
+  --panel: #22252c;
+  --panel-2: #2a2e36;
+  --line: #363a43;
+  --line-2: #474c56;
+  --ink: #eef0ec;
+  --ink-2: #b6bac2;
+  --ink-3: #7f848d;
+  --paper: #ecebe3;
+  --paper-ink: #1d1f24;
+  --paper-line: #d6d4c9;
+  --old: #e08b3c;
+  --old-soft: #4a2f18;
+  --old-ink: #f4c79a;
+  --new: #6d86ff;
+  --new-soft: #1d2650;
+  --new-ink: #c3ccff;
+  --bad: #ef5c4e;
+  --bad-soft: #4d211d;
+  --good: #4fc182;
+  --good-soft: #17392a;
+  --warn: #e0b13a;
+  --warn-soft: #3f3212;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 30px -12px rgb(0 0 0 / 0.7);
+}
+
+@theme inline {
+  --color-ground: var(--ground);
+  --color-ground-2: var(--ground-2);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-paper: var(--paper);
+  --color-paper-ink: var(--paper-ink);
+  --color-paper-line: var(--paper-line);
+  --color-old: var(--old);
+  --color-old-soft: var(--old-soft);
+  --color-old-ink: var(--old-ink);
+  --color-new: var(--new);
+  --color-new-soft: var(--new-soft);
+  --color-new-ink: var(--new-ink);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --font-sans: 'Schibsted Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Martian Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --shadow-panel: var(--shadow);
+}
+
+/* ---------- base ---------- */
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 2px solid var(--new);
+    outline-offset: 2px;
+  }
+}
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- receipt paper ---------- */
+.receipt {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 3px,
+      rgb(0 0 0 / 0.012) 3px 4px
+    ),
+    var(--paper);
+  color: var(--paper-ink);
+}
+.receipt-edge {
+  height: 10px;
+  background: var(--paper);
+  -webkit-mask: linear-gradient(-45deg, transparent 0 6px, #000 6px) 0 0 / 12px 100%,
+    linear-gradient(45deg, transparent 0 6px, #000 6px) 6px 0 / 12px 100%;
+  -webkit-mask-composite: source-in;
+  mask: conic-gradient(from 135deg at top, #000 90deg, transparent 0) top / 12px 100%;
+}
+.receipt-edge.top {
+  transform: scaleY(-1);
+}
+
+/* ---------- scan line for the replay cursor ---------- */
+.scanline {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--old) 70%, transparent),
+    transparent
+  );
+}
+
+/* subtle grid backdrop for the stage */
+.stage-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--line) 45%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--line) 45%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* thin scrollbars */
+.thin-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: var(--line-2);
+  border-radius: 999px;
+}
+
+/* range input */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line);
+  outline: none;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--new);
+  border: 2px solid var(--panel);
+  box-shadow: 0 0 0 1px var(--line-2);
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
