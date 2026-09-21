@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react'
+import { Check, ChevronDown } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { ScenarioDef } from '../scenarios/types'
 
@@ -14,55 +14,71 @@ export function ScenarioPicker({ scenarios, current, onSelect }: { scenarios: Sc
     const close = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
     window.addEventListener('mousedown', close)
-    return () => window.removeEventListener('mousedown', close)
+    window.addEventListener('keydown', esc)
+    return () => {
+      window.removeEventListener('mousedown', close)
+      window.removeEventListener('keydown', esc)
+    }
   }, [open])
 
-  const pill = (active: boolean) =>
-    `flex h-9 shrink-0 items-center gap-2 rounded-full border px-3.5 text-[13px] transition-colors ${
-      active ? 'border-ink bg-ink font-semibold text-ground' : 'border-line bg-panel font-medium text-ink-2 hover:border-line-2 hover:text-ink'
+  const tab = (active: boolean) =>
+    `relative flex h-11 shrink-0 items-center gap-2 px-1 text-[14px] transition-colors ${
+      active ? 'font-semibold text-ink' : 'font-medium text-ink-3 hover:text-ink'
     }`
+  const underline = <span className="absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-ink" />
 
   return (
-    <div ref={ref} className="relative">
-      <div className="flex flex-wrap gap-2">
-        {main.map((s) => (
-          <button key={s.id} className={pill(s.id === current)} onClick={() => onSelect(s.id)} aria-pressed={s.id === current}>
-            <span className="font-mono text-[11px] opacity-60">{s.n}</span>
-            {s.short}
-          </button>
-        ))}
-        <button className={pill(!!currentMore)} onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+    <div ref={ref} className="relative border-b border-line">
+      <nav className="no-scrollbar -mb-px flex gap-6 overflow-x-auto overflow-y-hidden" aria-label="Stories">
+        {main.map((s) => {
+          const active = s.id === current
+          return (
+            <button key={s.id} className={tab(active)} onClick={() => onSelect(s.id)} aria-current={active}>
+              <span className={`tnum font-mono text-[11px] ${active ? 'text-ink-3' : 'text-line-2'}`}>0{s.n}</span>
+              {s.short}
+              {active && underline}
+            </button>
+          )
+        })}
+        <button className={tab(!!currentMore)} onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-haspopup="menu">
           {currentMore ? (
             <>
-              <span className="font-mono text-[11px] opacity-60">{currentMore.n}</span>
+              <span className="tnum font-mono text-[11px] text-ink-3">0{currentMore.n}</span>
               {currentMore.short}
             </>
           ) : (
             'More stories'
           )}
-          <ChevronDown size={14} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+          <ChevronDown size={15} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+          {currentMore && underline}
         </button>
-      </div>
+      </nav>
 
       {open && (
-        <div className="absolute left-0 top-11 z-40 w-[min(420px,100%)] overflow-hidden rounded-xl border border-line bg-panel shadow-panel">
-          {more.map((s, i) => (
-            <button
-              key={s.id}
-              onClick={() => {
-                onSelect(s.id)
-                setOpen(false)
-              }}
-              className={`flex w-full gap-3 px-4 py-2.5 text-left hover:bg-panel-2 ${i > 0 ? 'border-t border-line' : ''} ${s.id === current ? 'bg-panel-2' : ''}`}
-            >
-              <span className="mt-0.5 font-mono text-[11px] text-ink-3">{s.n}</span>
-              <span>
-                <span className="block text-[13px] font-semibold leading-5">{s.title}</span>
-                <span className="block text-[12px] leading-4 text-ink-3">{s.tagline}</span>
-              </span>
-            </button>
-          ))}
+        <div role="menu" className="absolute right-0 top-[52px] z-40 w-[min(400px,100%)] overflow-hidden rounded-xl border border-line bg-panel p-1.5 shadow-panel sm:left-auto">
+          {more.map((s) => {
+            const active = s.id === current
+            return (
+              <button
+                key={s.id}
+                role="menuitem"
+                onClick={() => {
+                  onSelect(s.id)
+                  setOpen(false)
+                }}
+                className={`flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-panel-2 ${active ? 'bg-panel-2' : ''}`}
+              >
+                <span className="tnum mt-[3px] font-mono text-[11px] text-ink-3">0{s.n}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13.5px] font-semibold leading-5 text-ink">{s.title}</span>
+                  <span className="block text-[12.5px] leading-[18px] text-ink-3">{s.tagline}</span>
+                </span>
+                {active && <Check size={15} className="mt-0.5 text-ink-2" />}
+              </button>
+            )
+          })}
         </div>
       )}
     </div>

@@ -17,7 +17,7 @@ export function LedgerStrip({ rows, hiddenCount, anchorId, devices }: { rows: Ro
   const visible = rows.slice(-SHOW)
   const earlier = hiddenCount + rows.length - visible.length
   return (
-    <div className="rounded-xl border border-line bg-panel p-4">
+    <div className="rounded-2xl border border-line bg-panel p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <div className="flex items-baseline gap-2">
           <Label>Ledger</Label>

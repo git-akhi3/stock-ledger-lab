@@ -9,7 +9,7 @@ type Line = [string, string, boolean?]
 
 function List({ title, accent, lines, reads, writes }: { title: string; accent: string; lines: Line[]; reads: number; writes: number }) {
   return (
-    <div className="rounded-xl border border-line bg-panel p-4">
+    <div className="rounded-2xl border border-line bg-panel p-5">
       <Label className={accent}>{title}</Label>
       <dl className="mt-2 flex flex-col gap-1.5">
         {lines.map(([k, v, hot]) => (
@@ -52,10 +52,17 @@ export function UnderTheHood({ snap }: { snap: Snapshot }) {
   ]
 
   return (
-    <section className="border-t border-line pt-4">
-      <button onClick={() => setOpen((v) => !v)} aria-expanded={open} className="flex items-center gap-1.5 text-[13px] font-medium text-ink-2 hover:text-ink">
-        <ChevronDown size={15} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
-        {open ? 'Hide' : 'Show'} what’s happening under the hood
+    <section>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="group flex w-full items-center justify-between gap-4 rounded-2xl border border-line px-6 py-4 text-left transition-colors hover:bg-panel sm:px-8"
+      >
+        <span>
+          <span className="block text-[14px] font-semibold text-ink">Under the hood</span>
+          <span className="block text-[13px] text-ink-3">The ledger, how each system works, and what it cost.</span>
+        </span>
+        <ChevronDown size={17} className={`shrink-0 text-ink-3 transition-transform group-hover:text-ink ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
         <div className="mt-4 flex flex-col gap-3">
@@ -64,7 +71,7 @@ export function UnderTheHood({ snap }: { snap: Snapshot }) {
             <List title="Today’s system" accent="text-old" lines={oldLines} reads={o.reads} writes={o.writes} />
             <List title="New design" accent="text-new" lines={newLines} reads={n.reads} writes={n.writes} />
           </div>
-          <div className="rounded-xl border border-line bg-panel p-4">
+          <div className="rounded-2xl border border-line bg-panel p-5">
             <Label>Server log</Label>
             <div className="mt-2 flex flex-col font-mono text-[11px] leading-[18px]">
               {snap.events.length === 0 && <span className="text-ink-3">nothing yet</span>}

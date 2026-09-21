@@ -5,60 +5,60 @@
 /* ---------- design tokens ---------- */
 :root {
   color-scheme: light;
-  --ground: #e8ebe7;
-  --ground-2: #dfe3de;
-  --panel: #f6f7f4;
-  --panel-2: #eef0eb;
-  --line: #c9cec6;
-  --line-2: #b3b9b0;
-  --ink: #15171c;
-  --ink-2: #4b5058;
-  --ink-3: #7b8089;
-  --paper: #fbfbf8;
-  --paper-ink: #1d1f24;
-  --paper-line: #e2e1d9;
-  --old: #c47128;
-  --old-soft: #f2dcc6;
-  --old-ink: #7a4212;
-  --new: #2343d8;
-  --new-soft: #d9dffb;
-  --new-ink: #16299a;
-  --bad: #d0392b;
-  --bad-soft: #f6d5d1;
-  --good: #2c8a5b;
-  --good-soft: #d3ecdf;
-  --warn: #b7860f;
-  --warn-soft: #f4e7bf;
-  --shadow: 0 1px 2px rgb(21 23 28 / 0.06), 0 8px 24px -12px rgb(21 23 28 / 0.25);
+  --ground: #f3f3f0;
+  --ground-2: #ebebe7;
+  --panel: #ffffff;
+  --panel-2: #f8f8f6;
+  --line: #e4e4df;
+  --line-2: #cfcfc8;
+  --ink: #121417;
+  --ink-2: #4a4e55;
+  --ink-3: #868a91;
+  --paper: #fbfbf9;
+  --paper-ink: #1b1d21;
+  --paper-line: #e6e5df;
+  --old: #b8560f;
+  --old-soft: #fbece0;
+  --old-ink: #7a3508;
+  --new: #2447d6;
+  --new-soft: #e6ebfd;
+  --new-ink: #1a2f99;
+  --bad: #c8352a;
+  --bad-soft: #fcebe9;
+  --good: #1f8a57;
+  --good-soft: #e3f3ea;
+  --warn: #a87708;
+  --warn-soft: #faf1d6;
+  --shadow: 0 1px 2px rgb(18 20 23 / 0.04), 0 16px 40px -24px rgb(18 20 23 / 0.22);
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --ground: #16181d;
-  --ground-2: #1c1f25;
-  --panel: #22252c;
-  --panel-2: #2a2e36;
-  --line: #363a43;
-  --line-2: #474c56;
-  --ink: #eef0ec;
-  --ink-2: #b6bac2;
-  --ink-3: #7f848d;
-  --paper: #ecebe3;
-  --paper-ink: #1d1f24;
-  --paper-line: #d6d4c9;
-  --old: #e08b3c;
-  --old-soft: #4a2f18;
-  --old-ink: #f4c79a;
-  --new: #6d86ff;
-  --new-soft: #1d2650;
-  --new-ink: #c3ccff;
-  --bad: #ef5c4e;
-  --bad-soft: #4d211d;
-  --good: #4fc182;
-  --good-soft: #17392a;
-  --warn: #e0b13a;
-  --warn-soft: #3f3212;
-  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 30px -12px rgb(0 0 0 / 0.7);
+  --ground: #0e1012;
+  --ground-2: #14171a;
+  --panel: #171a1e;
+  --panel-2: #1c2024;
+  --line: #272c32;
+  --line-2: #373d45;
+  --ink: #ecedea;
+  --ink-2: #b2b6bc;
+  --ink-3: #7a7f87;
+  --paper: #1f2328;
+  --paper-ink: #e4e5e2;
+  --paper-line: #30353c;
+  --old: #ec8a4c;
+  --old-soft: #33200f;
+  --old-ink: #f6c39f;
+  --new: #7d94ff;
+  --new-soft: #1a2248;
+  --new-ink: #c7d0ff;
+  --bad: #f06a5e;
+  --bad-soft: #341816;
+  --good: #4cc486;
+  --good-soft: #12301f;
+  --warn: #e2b340;
+  --warn-soft: #33290f;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.5), 0 16px 40px -24px rgb(0 0 0 / 0.8);
 }
 
 @theme inline {
@@ -146,22 +146,13 @@
   transform: scaleY(-1);
 }
 
-/* ---------- scan line for the replay cursor ---------- */
-.scanline {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in oklab, var(--old) 70%, transparent),
-    transparent
-  );
-}
 
-/* subtle grid backdrop for the stage */
-.stage-grid {
-  background-image:
-    linear-gradient(to right, color-mix(in oklab, var(--line) 45%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in oklab, var(--line) 45%, transparent) 1px, transparent 1px);
-  background-size: 24px 24px;
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 /* thin scrollbars */
