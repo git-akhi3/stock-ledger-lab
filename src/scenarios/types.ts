@@ -1,6 +1,5 @@
 import type { Engine } from '../engine/engine'
 import type { Snapshot } from '../engine/types'
-import type { FX } from '../fx/bus'
 
 export interface Params {
   scale: 1 | 10 | 100
@@ -10,33 +9,29 @@ export interface Params {
 
 export const DEFAULT_PARAMS: Params = { scale: 1, clockSkewHours: 0, burstSize: 480 }
 
-export interface Beat {
-  /** headline shown under the stage */
-  caption: string | ((s: Snapshot) => string)
-  /** optional one-liner in smaller type */
-  detail?: string | ((s: Snapshot) => string)
-  duration: number
-  run: (e: Engine, fx: FX) => void
-}
+export type Text = string | ((s: Snapshot) => string)
 
-export interface DeviceSeed {
-  id: string
-  label: string
-  kind: 'pos' | 'console'
-  online: boolean
-  held: number
-  cached: number | null
+export interface Beat {
+  /** what happened in the shop, in one sentence */
+  caption: Text
+  /** optional second sentence of context */
+  detail?: Text
+  /** why today's system shows what it shows */
+  old?: Text
+  /** why the new design shows what it shows */
+  nu?: Text
+  /** auto-play time on this step, ms */
+  duration?: number
+  run: (e: Engine) => void
 }
 
 export interface ScenarioDef {
   id: string
   n: number
-  title: string
-  /** two-word label for the scenario strip */
+  /** two-word label for the picker */
   short: string
+  title: string
   tagline: string
   headliner: boolean
-  /** short label of what the scenario proves */
-  proves: string
   build: (p: Params) => { seed: (e: Engine) => void; beats: Beat[] }
 }

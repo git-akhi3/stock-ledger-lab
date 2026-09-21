@@ -79,9 +79,9 @@ export class Engine {
     this.now = opts.now ?? 0
     this.rows = opts.rows ?? []
     this.devices = opts.devices ?? [
-      { id: 'a', label: 'POS A', kind: 'pos', online: true, held: 0, cached: null },
-      { id: 'b', label: 'POS B', kind: 'pos', online: true, held: 0, cached: null },
-      { id: 'console', label: 'Web console', kind: 'console', online: true, held: 0, cached: null },
+      { id: 'a', label: 'Till A', kind: 'pos', online: true, held: 0, cached: null },
+      { id: 'b', label: 'Till B', kind: 'pos', online: true, held: 0, cached: null },
+      { id: 'console', label: 'Back office', kind: 'console', online: true, held: 0, cached: null },
     ]
     for (const r of this.rows) if (r.normalizedMilli === null) this.normalizeRow(r)
     this.old.value = this.replayValue()
@@ -359,7 +359,7 @@ export class Engine {
     this.old.lastWriter = 'console'
     this.old.writes += 1
     this.old.docWrites += 1
-    this.log('old', `console wrote absolute ${fmtNum(value)}`)
+    this.log('old', `back office wrote ${fmtNum(value)}`)
   }
 
   // ---------- snapshot ----------

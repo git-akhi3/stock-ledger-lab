@@ -1,134 +1,84 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Engine } from '../engine/engine'
 import type { Snapshot } from '../engine/types'
-import { fxBus, type FX } from '../fx/bus'
 import { scenarioById } from '../scenarios'
-import type { Beat, Params, ScenarioDef } from '../scenarios/types'
+import type { Params } from '../scenarios/types'
 
-interface Built {
-  def: ScenarioDef
-  beats: Beat[]
-  seed: (e: Engine) => void
-}
-
+/**
+ * Steps through a scenario. Every step is applied instantly and completely,
+ * so one click is exactly one change — nothing moves on its own afterwards.
+ */
 export function usePlayer(initialId: string, params: Params) {
   const [scenarioId, setScenarioId] = useState(initialId)
   const [beat, setBeat] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [snap, setSnap] = useState<Snapshot | null>(null)
   const engineRef = useRef<Engine | null>(null)
-  const timers = useRef<number[]>([])
-  const builtRef = useRef<Built | null>(null)
   const beatRef = useRef(0)
 
-  const built = useMemo<Built>(() => {
+  const built = useMemo(() => {
     const def = scenarioById(scenarioId)
-    const { seed, beats } = def.build(params)
-    return { def, seed, beats }
+    return { def, ...def.build(params) }
   }, [scenarioId, params])
-  builtRef.current = built
 
-  const clearTimers = () => {
-    for (const t of timers.current) window.clearTimeout(t)
-    timers.current = []
-  }
-
-  const publish = useCallback(() => {
-    if (engineRef.current) setSnap(engineRef.current.snapshot())
-  }, [])
-
-  const runBeat = useCallback(
-    (i: number, live: boolean) => {
-      const e = engineRef.current!
-      const b = builtRef.current!.beats[i]
-      if (!b) return
-      const fx: FX = live
-        ? {
-            emit: (c) => fxBus.emit(c),
-            after: (ms, fn) => {
-              const t = window.setTimeout(() => {
-                fn()
-                publish()
-              }, ms)
-              timers.current.push(t)
-            },
-          }
-        : { emit: () => {}, after: (_ms, fn) => fn() }
-      b.run(e, fx)
-    },
-    [publish],
-  )
-
-  /** Rebuild from scratch up to (not including) beat i, then run i live. */
   const goTo = useCallback(
-    (i: number, fromScratch: boolean) => {
-      clearTimers()
-      const bt = builtRef.current!
-      const target = Math.max(0, Math.min(i, bt.beats.length - 1))
-      if (fromScratch || !engineRef.current || target <= beatRef.current) {
-        const e = new Engine()
-        bt.seed(e)
+    (i: number) => {
+      const target = Math.max(0, Math.min(i, built.beats.length - 1))
+      let e = engineRef.current
+      if (!e || target <= beatRef.current) {
+        e = new Engine()
+        built.seed(e)
         engineRef.current = e
-        for (let k = 0; k < target; k++) runBeat(k, false)
+        for (let k = 0; k <= target; k++) built.beats[k].run(e)
       } else {
-        for (let k = beatRef.current + 1; k < target; k++) runBeat(k, false)
+        for (let k = beatRef.current + 1; k <= target; k++) built.beats[k].run(e)
       }
       beatRef.current = target
       setBeat(target)
-      runBeat(target, true)
-      publish()
+      setSnap(e.snapshot())
     },
-    [runBeat, publish],
+    [built],
   )
 
-  // load scenario / params change
   useEffect(() => {
-    goTo(0, true)
-    // chaos is thirty tiny steps; stepping it by hand is no fun
-    if (built.def.id === 'chaos') setPlaying(true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [built])
+    engineRef.current = null
+    beatRef.current = 0
+    goTo(0)
+    setPlaying(built.def.id === 'chaos')
+  }, [built, goTo])
 
-  // autoplay
   useEffect(() => {
     if (!playing) return
-    const b = built.beats[beat]
-    if (!b) return
     if (beat >= built.beats.length - 1) {
-      const t = window.setTimeout(() => setPlaying(false), b.duration)
-      return () => window.clearTimeout(t)
+      setPlaying(false)
+      return
     }
-    const t = window.setTimeout(() => goTo(beat + 1, false), b.duration)
+    const t = window.setTimeout(() => goTo(beat + 1), built.beats[beat].duration ?? 2500)
     return () => window.clearTimeout(t)
   }, [playing, beat, built, goTo])
 
-  useEffect(() => () => clearTimers(), [])
-
-  const next = useCallback(() => {
-    if (beatRef.current < built.beats.length - 1) goTo(beatRef.current + 1, false)
-  }, [built, goTo])
+  const next = useCallback(() => goTo(beatRef.current + 1), [goTo])
   const prev = useCallback(() => {
-    if (beatRef.current > 0) goTo(beatRef.current - 1, true)
+    if (beatRef.current > 0) goTo(beatRef.current - 1)
   }, [goTo])
   const restart = useCallback(() => {
-    goTo(0, true)
+    engineRef.current = null
+    goTo(0)
   }, [goTo])
-  const select = useCallback((id: string) => {
-    setScenarioId(id)
-  }, [])
 
   return {
     scenario: built.def,
     beats: built.beats,
-    beat,
+    // for one render after switching stories the old step index can overrun the new story
+    beat: Math.min(beat, built.beats.length - 1),
     playing,
     snap,
     setPlaying,
     next,
     prev,
     restart,
-    goTo: (i: number) => goTo(i, true),
-    select,
+    goTo,
+    select: setScenarioId,
     scenarioId,
   }
 }

@@ -1,23 +1,36 @@
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { fmtNum } from '../engine/engine'
 
-export function Odometer({ value, className, decimals = 0 }: { value: number; className?: string; decimals?: number }) {
-  const mv = useMotionValue(value)
-  const spring = useSpring(mv, { stiffness: 170, damping: 22, mass: 0.6 })
-  const text = useTransform(spring, (v) => {
-    if (!Number.isFinite(v)) return String(v)
-    const rounded = decimals ? Number(v.toFixed(decimals)) : Math.round(v)
-    return fmtNum(rounded)
-  })
+/**
+ * Shows a number. Small changes tick through the in-between values so the eye
+ * can follow them; big changes snap, because counting 12 → 600 is noise.
+ */
+export function Odometer({ value, className }: { value: number; className?: string }) {
+  const [shown, setShown] = useState(value)
+  const shownRef = useRef(value)
   useEffect(() => {
-    const cur = mv.get()
-    if (!Number.isFinite(value) || Math.abs(value - cur) > 100_000) {
-      mv.jump(value)
-      spring.jump(value)
-    } else {
-      mv.set(value)
+    const from = shownRef.current
+    const diff = value - from
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (!Number.isFinite(value) || !Number.isFinite(from) || Math.abs(diff) > 20 || Math.abs(diff) < 1 || reduced) {
+      shownRef.current = value
+      setShown(value)
+      return
     }
-  }, [value, mv, spring])
-  return <motion.span className={className}>{text}</motion.span>
+    const steps = Math.abs(Math.round(diff))
+    const stepMs = Math.min(60, 360 / steps)
+    let i = 0
+    const id = window.setInterval(() => {
+      i += 1
+      const v = i >= steps ? value : from + Math.sign(diff) * i
+      shownRef.current = v
+      setShown(v)
+      if (i >= steps) window.clearInterval(id)
+    }, stepMs)
+    return () => {
+      window.clearInterval(id)
+      shownRef.current = value
+    }
+  }, [value])
+  return <span className={className}>{fmtNum(shown)}</span>
 }

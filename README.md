@@ -16,20 +16,24 @@ one goes wrong and how the new one handles each case.
 
 ## Scenarios
 
-| # | Scenario | What it proves |
-|---|---|---|
-| 1 | First sale of the day goes negative | One writer + a monotonic guard beats last-writer-wins |
-| 2 | Four months offline, then a flush | Per-item debounce + aggregation billing keep it cheap and calm |
-| 3 | A late sale arrives after a recount | Recount anchors, and their honest clock-skew limit |
-| 4 | CSV re-import, ledger wiped | An import is an anchor, not a delta |
-| 5 | A re-send wipes the field | Why the normalize trigger is `onWrite`, not `onCreate` |
-| 6 | The same event, delivered three times | Deterministic stamp + absolute write + guard = idempotent |
-| 7 | A 32-bit overflow row | Quarantine at the trigger, never at the sale |
-| 8 | Flash sale on a hot item | The hot spot is the item document; debounce caps it |
-| 9 | Chaos mode | The invariant holds while the old number drifts |
+Each story is a few steps. At every step you see what's on the shelf, what today's system
+shows, and what the new design shows, each with one sentence saying why.
 
-The **Sandbox** drawer adds sliders for fleet scale (1× / 10× / 100×), client clock skew and
-offline burst size, plus the shadow-mode disagreement buckets from the rollout plan.
+| # | Story | What it shows |
+|---|---|---|
+| 1 | The first sale of the day goes negative | One writer + a monotonic guard beats last-writer-wins |
+| 2 | Four months offline, then everything at once | Grouped recalculation + aggregation billing keep it cheap |
+| 3 | A late sale arrives after a hand count | Recount checkpoints, and their honest clock-skew limit |
+| 4 | The product is re-imported from a spreadsheet | An import is a checkpoint, not a delta |
+| 5 | A till sends the same sale twice | Why the normalize trigger is `onWrite`, not `onCreate` |
+| 6 | One message, delivered three times | Deterministic label + absolute write + guard = idempotent |
+| 7 | A till records an impossible sale | Quarantine at the trigger, never at the sale |
+| 8 | Forty sales in ten seconds | The hot spot is the item document; grouping caps it |
+| 9 | Everything at once | The new number holds while the old one drifts |
+
+"Show what's happening under the hood" reveals the ledger, each system's mechanics, costs and
+a server log. The sliders button in the header opens "what if" settings: fleet scale
+(1× / 10× / 100×), client clock skew and offline burst size.
 
 ## How it works
 
