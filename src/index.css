@@ -177,12 +177,20 @@ input[type='range'] {
 }
 input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--panel);
+  border: 2px solid var(--new);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.15);
+  cursor: pointer;
+}
+input[type='range']::-moz-range-thumb {
   width: 16px;
   height: 16px;
   border-radius: 999px;
-  background: var(--new);
-  border: 2px solid var(--panel);
-  box-shadow: 0 0 0 1px var(--line-2);
+  background: var(--panel);
+  border: 2px solid var(--new);
   cursor: pointer;
 }
 

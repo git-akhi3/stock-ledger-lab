@@ -1,6 +1,7 @@
-import { AnimatePresence } from 'framer-motion'
-import { Code2, Moon, SlidersHorizontal, Sun } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
+import { Moon, SlidersHorizontal, Sun } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { track } from './analytics'
 import { Sandbox } from './components/Sandbox'
 import { ScenarioPicker } from './components/ScenarioPicker'
 import { Stage } from './components/Stage'
@@ -32,6 +33,13 @@ function useTheme(): [Theme, () => void] {
   return [theme, () => setTheme((t) => (t === 'light' ? 'dark' : 'light'))]
 }
 
+/** Stories where a "what if" setting changes the outcome, and the question to ask. */
+const HINTS: Record<string, string> = {
+  'late-recount': 'What if till B’s clock is wrong?',
+  'offline-flush': 'What if the till was offline for longer?',
+  'flash-sale': 'What if there were 100× more shops?',
+}
+
 function Mark() {
   // a ledger: three ruled lines, the last one short
   return (
@@ -49,11 +57,44 @@ export default function App() {
   const [sandbox, setSandbox] = useState(false)
   const player = usePlayer('first-sale', params)
   const { snap } = player
+  const changed = JSON.stringify(params) !== JSON.stringify(DEFAULT_PARAMS)
+
+  const openWhatIf = (source: string) => {
+    setSandbox(true)
+    track('what_if_opened', { source, story: player.scenarioId })
+  }
+
+  const changeParams = (p: Params) => {
+    for (const k of Object.keys(p) as (keyof Params)[]) {
+      if (p[k] !== params[k]) track('what_if_changed', { setting: k, value: p[k], story: player.scenarioId })
+    }
+    if (JSON.stringify(p) === JSON.stringify(DEFAULT_PARAMS) && changed) track('what_if_reset', { story: player.scenarioId })
+    setParams(p)
+  }
+
+  const selectStory = (id: string, source: string) => {
+    if (id !== player.scenarioId) track('story_selected', { story: id, from: player.scenarioId, source })
+    player.select(id)
+  }
+
+  // one event per step shown, and one when a story is finished
+  const lastStep = useRef('')
+  useEffect(() => {
+    const key = `${player.scenarioId}:${player.beat}`
+    if (!snap || key === lastStep.current) return
+    lastStep.current = key
+    const total = player.beats.length
+    track('step_viewed', { story: player.scenarioId, step: player.beat + 1, total_steps: total })
+    if (player.beat === total - 1) track('story_completed', { story: player.scenarioId, total_steps: total })
+  }, [player.scenarioId, player.beat, player.beats.length, snap])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement)?.tagName
-      if (tag === 'INPUT' || sandbox) return
+      if (sandbox) {
+        if (e.key === 'Escape') setSandbox(false)
+        return
+      }
+      if ((e.target as HTMLElement)?.tagName === 'INPUT') return
       if (e.key === 'ArrowRight') player.next()
       else if (e.key === 'ArrowLeft') player.prev()
     }
@@ -61,7 +102,10 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [player, sandbox])
 
-  const iconBtn = 'grid h-8 w-8 place-items-center rounded-lg text-ink-3 transition-colors hover:bg-ground-2 hover:text-ink'
+  // no background scrolling behind the drawer
+  useEffect(() => {
+    document.body.style.overflow = sandbox ? 'hidden' : ''
+  }, [sandbox])
 
   return (
     <div className="flex min-h-full flex-col">
@@ -69,32 +113,48 @@ export default function App() {
         <div className="mx-auto flex h-14 w-full max-w-[1040px] items-center gap-3 px-5 sm:px-8">
           <Mark />
           <span className="text-[14.5px] font-semibold tracking-[-0.01em]">Stock Ledger Lab</span>
-          <div className="ml-auto flex items-center gap-0.5">
-            <button onClick={() => setSandbox(true)} className={iconBtn} aria-label="What if… settings" title="What if…">
-              <SlidersHorizontal size={15} />
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={() => openWhatIf('header')}
+              className="group relative flex h-9 items-center gap-2 rounded-full border border-new/30 bg-new-soft pl-2 pr-3.5 text-[13px] font-semibold text-new-ink shadow-[0_1px_0_rgb(0_0_0/0.03)] transition-colors hover:border-new/60"
+            >
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-new text-white">
+                <SlidersHorizontal size={12} strokeWidth={2.5} />
+              </span>
+              What if…
+              {changed && <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-ground bg-new" aria-label="Settings changed" />}
             </button>
-            <button onClick={toggleTheme} className={iconBtn} aria-label="Toggle theme" title="Theme">
-              {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+            <button
+              onClick={() => {
+                toggleTheme()
+                track('theme_changed', { theme: theme === 'dark' ? 'light' : 'dark' })
+              }}
+              className="grid h-9 w-9 place-items-center rounded-full text-ink-3 transition-colors hover:bg-ground-2 hover:text-ink"
+              aria-label="Toggle theme"
+              title="Theme"
+            >
+              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </button>
-            <a href="https://github.com/git-akhi3/stock-ledger-lab" target="_blank" rel="noreferrer" className={iconBtn} aria-label="Source code" title="Source code">
-              <Code2 size={15} />
-            </a>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[1040px] flex-1 px-5 pb-16 pt-10 sm:px-8 sm:pt-14">
+      <main className="mx-auto w-full max-w-[1040px] flex-1 px-5 pb-28 pt-10 sm:px-8 sm:pb-16 sm:pt-14">
         <div className="max-w-[640px]">
-          <h1 className="text-[32px] font-semibold leading-[38px] tracking-[-0.025em] [text-wrap:balance] sm:text-[38px] sm:leading-[44px]">
+          <h1 className="text-[30px] font-semibold leading-[36px] tracking-[-0.025em] [text-wrap:balance] sm:text-[38px] sm:leading-[44px]">
             Why the stock number goes wrong, and how to keep it right.
           </h1>
-          <p className="mt-3 text-[16px] leading-[25px] text-ink-2 [text-wrap:pretty]">
-            Pick a story and step through it. At every step, compare what each system shows with what’s really on the shelf.
+          <p className="mt-3 text-[15.5px] leading-[24px] text-ink-2 [text-wrap:pretty] sm:text-[16px] sm:leading-[25px]">
+            Pick a story and step through it. At every step, compare what each system shows with what’s really on the shelf. Use{' '}
+            <button onClick={() => openWhatIf('intro')} className="font-semibold text-new-ink underline decoration-new/40 underline-offset-[3px] hover:decoration-new">
+              What if…
+            </button>{' '}
+            to change the conditions.
           </p>
         </div>
 
-        <div className="mt-10">
-          <ScenarioPicker scenarios={SCENARIOS} current={player.scenarioId} onSelect={player.select} />
+        <div className="mt-9 sm:mt-10">
+          <ScenarioPicker scenarios={SCENARIOS} current={player.scenarioId} onSelect={(id) => selectStory(id, 'tabs')} />
         </div>
 
         {snap && (
@@ -107,16 +167,24 @@ export default function App() {
               playing={player.playing}
               onPrev={player.prev}
               onNext={player.next}
-              onRestart={player.restart}
-              onTogglePlay={() => player.setPlaying((p) => !p)}
+              onRestart={() => {
+                track('story_restarted', { story: player.scenarioId })
+                player.restart()
+              }}
+              onTogglePlay={() => {
+                track('autoplay_toggled', { story: player.scenarioId, playing: !player.playing })
+                player.setPlaying((p) => !p)
+              }}
               onGoTo={player.goTo}
+              hint={HINTS[player.scenarioId]}
+              onHint={() => openWhatIf('story_hint')}
             />
-            <UnderTheHood snap={snap} />
+            <UnderTheHood snap={snap} onToggle={(open) => track('under_the_hood_toggled', { open, story: player.scenarioId })} />
           </div>
         )}
       </main>
 
-      <footer className="border-t border-line">
+      <footer className="border-t border-line pb-20 sm:pb-0">
         <div className="mx-auto flex w-full max-w-[1040px] flex-wrap items-center justify-between gap-2 px-5 py-5 text-[12.5px] text-ink-3 sm:px-8">
           <span>An illustrative simulation of a design document. Not real shop data.</span>
           <span className="hidden sm:inline">
@@ -126,15 +194,30 @@ export default function App() {
         </div>
       </footer>
 
-      <AnimatePresence>
-        {sandbox && (
-          <div className="fixed inset-0 z-50 flex justify-end bg-ink/25 p-3 backdrop-blur-[2px]" onClick={() => setSandbox(false)}>
-            <div className="h-full w-full max-w-[380px]" onClick={(e) => e.stopPropagation()}>
-              <Sandbox params={params} onChange={setParams} snap={snap} onClose={() => setSandbox(false)} />
+      {/* closes instantly on purpose: nothing should block the page while it animates away */}
+      {sandbox && (
+          <motion.div
+            key="whatif"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.18 }}
+            className="fixed inset-0 z-50 flex justify-end bg-ink/30 backdrop-blur-[2px] sm:p-3"
+            onClick={() => setSandbox(false)}
+          >
+            <div className="h-full w-full sm:max-w-[400px]" onClick={(e) => e.stopPropagation()}>
+              <Sandbox
+                params={params}
+                onChange={changeParams}
+                onClose={() => setSandbox(false)}
+                current={player.scenarioId}
+                onShow={(id) => {
+                  selectStory(id, 'what_if')
+                  setSandbox(false)
+                }}
+              />
             </div>
-          </div>
+          </motion.div>
         )}
-      </AnimatePresence>
     </div>
   )
 }

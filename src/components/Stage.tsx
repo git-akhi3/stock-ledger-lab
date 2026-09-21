@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { ArrowLeft, ArrowRight, Check, Loader, Pause, Play, RotateCcw, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, Loader, Pause, Play, RotateCcw, SlidersHorizontal, X } from 'lucide-react'
 import { fmtNum } from '../engine/engine'
 import type { Snapshot } from '../engine/types'
 import { say } from '../scenarios/say'
@@ -61,6 +61,8 @@ export function Stage({
   onRestart,
   onTogglePlay,
   onGoTo,
+  hint,
+  onHint,
 }: {
   scenario: ScenarioDef
   beats: Beat[]
@@ -72,6 +74,9 @@ export function Stage({
   onRestart: () => void
   onTogglePlay: () => void
   onGoTo: (i: number) => void
+  /** a story-specific 'what if' prompt that opens the drawer */
+  hint?: string
+  onHint: () => void
 }) {
   const b = beats[beat]
   const last = beat >= beats.length - 1
@@ -82,6 +87,7 @@ export function Stage({
   const fallback = (st: Status) => (st.tone === 'good' ? 'Correct.' : `${st.label}.`)
 
   return (
+    <>
     <section className="overflow-hidden rounded-[20px] border border-line bg-panel shadow-panel">
       <div className="px-6 pb-7 pt-6 sm:px-8">
         {/* top row: where you are + controls, pinned so they never move */}
@@ -93,7 +99,7 @@ export function Stage({
               Step {beat + 1} of {beats.length}
             </span>
           </div>
-          <div className="flex shrink-0 items-center gap-1.5">
+          <div className="hidden shrink-0 items-center gap-1.5 sm:flex">
             {chaos && (
               <button
                 onClick={onTogglePlay}
@@ -155,6 +161,19 @@ export function Stage({
           <h2 className="text-[26px] font-semibold leading-[32px] tracking-[-0.02em] text-ink [text-wrap:balance]">{say(b?.caption, snap)}</h2>
           {b?.detail && <p className="mt-2.5 text-[15.5px] leading-[24px] text-ink-2 [text-wrap:pretty]">{say(b.detail, snap)}</p>}
         </motion.div>
+
+        {hint && (
+          <button
+            onClick={onHint}
+            className="mt-5 inline-flex items-center gap-2 rounded-full border border-new/25 bg-new-soft py-1.5 pl-2 pr-3.5 text-[13px] font-medium text-new-ink transition-colors hover:border-new/50"
+          >
+            <span className="grid h-5 w-5 place-items-center rounded-full bg-new text-white">
+              <SlidersHorizontal size={11} strokeWidth={2.5} />
+            </span>
+            {hint}
+            <ArrowRight size={13} className="opacity-70" />
+          </button>
+        )}
       </div>
 
       <div className="grid border-t border-line md:grid-cols-[0.82fr_1fr_1fr] md:divide-x md:divide-y-0 divide-y divide-line">
@@ -163,5 +182,39 @@ export function Stage({
         <Column label="New design" dot="bg-new" value={snap.nu.value} numCls="text-new" st={newSt} why={say(b?.nu, snap) || fallback(newSt)} />
       </div>
     </section>
+
+    {/* phones: Back / Next live in a bar under your thumb */}
+    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-panel/95 px-4 pt-3 backdrop-blur-md sm:hidden" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom, 0px))' }}>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onPrev}
+          disabled={beat === 0}
+          aria-label="Previous step"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-line text-ink-2 disabled:opacity-35"
+        >
+          <ArrowLeft size={18} />
+        </button>
+        {chaos && (
+          <button onClick={onTogglePlay} aria-label={playing ? 'Pause' : 'Play'} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-line text-ink-2">
+            {playing ? <Pause size={17} /> : <Play size={17} />}
+          </button>
+        )}
+        <div className="tnum min-w-0 flex-1 text-center text-[12.5px] text-ink-3">
+          {beat + 1} / {beats.length}
+        </div>
+        <button onClick={last ? onRestart : onNext} className="flex h-11 shrink-0 items-center gap-2 rounded-xl bg-ink px-5 text-[14px] font-semibold text-ground">
+          {last ? (
+            <>
+              Start over <RotateCcw size={15} />
+            </>
+          ) : (
+            <>
+              Next <ArrowRight size={16} />
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+    </>
   )
 }

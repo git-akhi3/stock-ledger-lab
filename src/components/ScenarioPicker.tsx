@@ -24,32 +24,34 @@ export function ScenarioPicker({ scenarios, current, onSelect }: { scenarios: Sc
   }, [open])
 
   const tab = (active: boolean) =>
-    `relative flex h-11 shrink-0 items-center gap-2 px-1 text-[14px] transition-colors ${
+    `relative flex h-11 shrink-0 items-center gap-2 px-0.5 text-[13.5px] transition-colors sm:px-1 sm:text-[14px] ${
       active ? 'font-semibold text-ink' : 'font-medium text-ink-3 hover:text-ink'
     }`
   const underline = <span className="absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-ink" />
 
   return (
     <div ref={ref} className="relative border-b border-line">
-      <nav className="no-scrollbar -mb-px flex gap-6 overflow-x-auto overflow-y-hidden" aria-label="Stories">
+      <nav className="no-scrollbar -mb-px flex gap-4 overflow-x-auto overflow-y-hidden sm:gap-6" aria-label="Stories">
         {main.map((s) => {
           const active = s.id === current
           return (
             <button key={s.id} className={tab(active)} onClick={() => onSelect(s.id)} aria-current={active}>
-              <span className={`tnum font-mono text-[11px] ${active ? 'text-ink-3' : 'text-line-2'}`}>0{s.n}</span>
+              <span className={`tnum hidden font-mono text-[11px] sm:inline ${active ? 'text-ink-3' : 'text-line-2'}`}>0{s.n}</span>
               {s.short}
               {active && underline}
             </button>
           )
         })}
         <button className={tab(!!currentMore)} onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-haspopup="menu">
+          {/* phones always say "More" (the card already names the story); desktop shows which one */}
+          <span className="sm:hidden">More</span>
           {currentMore ? (
-            <>
+            <span className="hidden items-center gap-2 sm:flex">
               <span className="tnum font-mono text-[11px] text-ink-3">0{currentMore.n}</span>
               {currentMore.short}
-            </>
+            </span>
           ) : (
-            'More stories'
+            <span className="hidden sm:inline">More stories</span>
           )}
           <ChevronDown size={15} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
           {currentMore && underline}

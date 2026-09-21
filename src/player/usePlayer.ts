@@ -40,11 +40,16 @@ export function usePlayer(initialId: string, params: Params) {
     [built],
   )
 
+  const lastIdRef = useRef<string | null>(null)
   useEffect(() => {
+    // a new story starts at step 1; a changed sandbox setting keeps you on the same step
+    const sameStory = lastIdRef.current === built.def.id
+    lastIdRef.current = built.def.id
+    const keep = sameStory ? beatRef.current : 0
     engineRef.current = null
     beatRef.current = 0
-    goTo(0)
-    setPlaying(built.def.id === 'chaos')
+    goTo(keep)
+    if (!sameStory) setPlaying(built.def.id === 'chaos')
   }, [built, goTo])
 
   useEffect(() => {

@@ -29,7 +29,7 @@ function List({ title, accent, lines, reads, writes }: { title: string; accent: 
   )
 }
 
-export function UnderTheHood({ snap }: { snap: Snapshot }) {
+export function UnderTheHood({ snap, onToggle }: { snap: Snapshot; onToggle?: (open: boolean) => void }) {
   const [open, setOpen] = useState(false)
   const o = snap.old
   const n = snap.nu
@@ -54,7 +54,10 @@ export function UnderTheHood({ snap }: { snap: Snapshot }) {
   return (
     <section>
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          onToggle?.(!open)
+          setOpen(!open)
+        }}
         aria-expanded={open}
         className="group flex w-full items-center justify-between gap-4 rounded-2xl border border-line px-6 py-4 text-left transition-colors hover:bg-panel sm:px-8"
       >

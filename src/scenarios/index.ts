@@ -85,7 +85,8 @@ const offlineFlush: ScenarioDef = {
   build: (p) => {
     const N = p.burstSize
     const HIST = 3000
-    const START = 600
+    // enough stock that the shelf never goes below zero, however big the burst
+    const START = N + 120
     return {
       seed: (e) => {
         e.seed({ truth: START - N, hiddenCount: HIST, hiddenSum: START, now: T(4, 10, 0) })
@@ -206,7 +207,7 @@ const lateAfterRecount: ScenarioDef = {
 const csvReimport: ScenarioDef = {
   id: 'csv-reimport',
   n: 4,
-  short: 'Spreadsheet import',
+  short: 'Re-import',
   title: 'The product is re-imported from a spreadsheet',
   tagline: 'The old history is wiped. What happens to stragglers?',
   headliner: false,
@@ -461,6 +462,8 @@ const chaos: ScenarioDef = {
     }
     for (let i = 0; i < STEPS; i++) {
       const roll = rand()
+      // draw every random value now, so replaying a step (Back) gives the same history
+      const [r1, r2, r3] = [rand(), rand(), rand()]
       const kind: keyof typeof captions =
         roll < 0.42 ? 'sale' : roll < 0.54 ? 'legacy' : roll < 0.64 ? 'dup' : roll < 0.76 ? 'late' : roll < 0.8 ? 'recount' : roll < 0.88 ? 'resend' : 'quiet'
       beats.push({
@@ -469,7 +472,7 @@ const chaos: ScenarioDef = {
         duration: 1100,
         run: (e) => {
           e.tick(6)
-          const dev = rand() < 0.5 ? 'a' : 'b'
+          const dev = r1 < 0.5 ? 'a' : 'b'
           const fire = (id: string) => {
             e.startReplay('pubsub')
             e.finishReplay('pubsub')
@@ -477,11 +480,11 @@ const chaos: ScenarioDef = {
             e.enqueue()
           }
           if (kind === 'sale') {
-            const q = 1 + Math.floor(rand() * 3)
+            const q = 1 + Math.floor(r2 * 3)
             e.truth -= q
             fire(e.writeRow(e.makeRow({ kind: 'sale', delta: q, deviceId: dev, eventTime: e.now })).id)
           } else if (kind === 'legacy') {
-            e.legacyWrite(e.old.value + Math.round(rand() * 9) - 4, dev === 'a' ? 'Till A' : 'Till B', 'both')
+            e.legacyWrite(e.old.value + Math.round(r2 * 9) - 4, dev === 'a' ? 'Till A' : 'Till B', 'both')
             e.bump('legacyOverwrite')
           } else if (kind === 'dup') {
             const row = e.rows[e.rows.length - 1]
@@ -491,8 +494,8 @@ const chaos: ScenarioDef = {
               e.bump('duplicateDelivery')
             }
           } else if (kind === 'late') {
-            const q = 1 + Math.floor(rand() * 2)
-            const eventTime = e.now - 3600 * (1 + Math.floor(rand() * 30))
+            const q = 1 + Math.floor(r2 * 2)
+            const eventTime = e.now - 3600 * (1 + Math.floor(r3 * 30))
             const a = e.rows.find((r) => r.id === e.nu.anchorId)
             const beforeAnchor = !!a && eventTime <= a.eventTime
             // a sale from before the hand count is already reflected in it
